@@ -99,6 +99,23 @@ def test_dateparse_errors_handled(fresh_db, fn, errors):
     assert rows == expected
 
 
+@pytest.mark.parametrize("fn", (recipes.parsedate, recipes.parsedatetime))
+def test_dateparse_overflow_raises(fn):
+    value = "999999999999999999999999999999-01-01"
+    with pytest.raises(OverflowError):
+        fn(value)
+
+
+@pytest.mark.parametrize("fn", (recipes.parsedate, recipes.parsedatetime))
+@pytest.mark.parametrize(
+    "errors,expected",
+    ((recipes.SET_NULL, None), (recipes.IGNORE, "999999999999999999999999999999-01-01")),
+)
+def test_dateparse_overflow_handled(fn, errors, expected):
+    value = "999999999999999999999999999999-01-01"
+    assert fn(value, errors=errors) == expected
+
+
 @pytest.mark.parametrize("delimiter", [None, ";", "-"])
 def test_jsonsplit(fresh_db, delimiter):
     fresh_db.table("example").insert_all(
